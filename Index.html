@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GeoMap — Cyber Interactive</title>
+  <title>GeoMap — Cyber Layout</title>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -52,41 +52,41 @@
     /* ── MAP ── */
     #map { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; z-index: 1; background: var(--bg); }
 
-    /* ── TOGGLE BUTTON ── */
+    /* ── FLOATING TOGGLE BUTTON ── */
     .panel-toggle {
       position: fixed; top: 72px; right: 16px; z-index: 1001;
-      width: 46px; height: 46px;
+      width: 48px; height: 48px;
       background: var(--panel); border: 1px solid var(--border);
       border-radius: var(--radius);
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       color: var(--accent); box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .panel-toggle:hover { border-color: var(--accent); transform: scale(1.05); }
-    .panel-toggle svg { width: 22px; height: 22px; fill: currentColor; }
+    .panel-toggle:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .panel-toggle svg { width: 24px; height: 24px; fill: currentColor; }
 
     /* ── LAYER PANEL ── */
     .layer-panel {
-      position: fixed; top: 72px; right: -280px; z-index: 900;
+      position: fixed; top: 72px; right: -300px; z-index: 900;
       background: rgba(17,24,32,0.96);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      width: 240px;
+      width: 260px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
       transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       overflow: hidden;
     }
     .layer-panel.open { right: 16px; }
-
+    
     .panel-title {
-      padding: 14px; font-size: 10px; font-weight: 600; letter-spacing: 2px;
+      padding: 16px; font-size: 10px; font-weight: 700; letter-spacing: 2px;
       text-transform: uppercase; color: var(--muted);
       border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between;
+      display: flex; justify-content: space-between; align-items: center;
     }
 
-    .layers-grid { max-height: 60vh; overflow-y: auto; padding: 8px; }
+    .layers-list { max-height: 400px; overflow-y: auto; padding: 10px; }
 
     .layer-btn {
       display: flex; align-items: center; gap: 12px;
@@ -94,14 +94,13 @@
       background: transparent; border: none; color: var(--text);
       font-family: 'Syne', sans-serif; font-size: 13px;
       cursor: pointer; transition: all 0.2s;
-      border-radius: 8px; margin-bottom: 4px;
+      border-radius: 8px; margin-bottom: 6px;
+      text-align: left;
     }
     .layer-btn:hover { background: rgba(0,212,255,0.08); color: var(--accent); }
-    .layer-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
-
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: 0.3s;
-    }
+    .layer-btn.active { background: rgba(0,212,255,0.15); color: var(--accent); font-weight: 600; }
+    
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: 0.3s; flex-shrink: 0; }
     .layer-btn.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
     /* ── STATUS BAR ── */
@@ -113,16 +112,18 @@
       font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);
     }
 
-    /* ── UTILS ── */
-    .leaflet-control-zoom { border: none !important; margin-left: 16px !important; margin-bottom: 40px !important; }
-    .leaflet-control-zoom a { background: var(--panel) !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; margin-bottom: 4px !important; }
+    /* ── LEAFLET UI OVERRIDES ── */
+    .leaflet-control-zoom { border: none !important; margin-left: 16px !important; margin-bottom: 45px !important; }
+    .leaflet-control-zoom a { background: var(--panel) !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; margin-bottom: 5px !important; }
+    .leaflet-control-zoom a:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
+    .leaflet-control-scale-line { background: transparent !important; border-color: var(--muted) !important; color: var(--muted) !important; }
   </style>
 </head>
 <body>
 
   <header>
     <div class="logo">Geo<span>Map</span></div>
-    <div class="coord-display" id="coordDisplay">41.2995, 69.2401</div>
+    <div class="coord-display" id="coordDisplay">Курсорни суринг</div>
   </header>
 
   <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
@@ -133,7 +134,7 @@
 
   <div class="layer-panel" id="layerPanel">
     <div class="panel-title">Basemap <span>Layers</span></div>
-    <div class="layers-grid">
+    <div class="layers-list">
       <button class="layer-btn active" data-layer="Topographic" onclick="switchLayer(this)"><span class="dot"></span> Топографик</button>
       <button class="layer-btn" data-layer="Streets" onclick="switchLayer(this)"><span class="dot"></span> Кўчалар</button>
       <button class="layer-btn" data-layer="Imagery" onclick="switchLayer(this)"><span class="dot"></span> Аэрофото</button>
@@ -146,48 +147,41 @@
   </div>
 
   <div class="status-bar">
-    <span style="color: #22c55e; margin-right: 15px;">● Online</span>
+    <span style="color: #22c55e; margin-right: 15px;">● Active</span>
     <span id="activeLayerStatus">Topographic</span>
     <span style="margin-left: auto;">Zoom: <span id="zoomLevel" style="color: var(--accent);">10</span></span>
   </div>
 
   <script>
-    // Map Setup
-    const map = L.map('map', {
-      center: [41.2995, 69.2401], // Toshkent
-      zoom: 10,
-      zoomControl: true
-    });
+    // Инициализация харитаси
+    const map = L.map('map', { center: [41.2995, 69.2401], zoom: 10, zoomControl: true });
     map.zoomControl.setPosition('bottomleft');
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
 
-    // Layers
+    // Қатламлар (Esri)
     const esriLayers = {
       Topographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
       Streets: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'),
       Imagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
-      ImageryFirefly: L.tileLevel(
-        'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
-        { attribution: 'Esri Firefly' }
-      ),
-      ShadedRelief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
-      DarkGray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
-      Gray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
-      NationalGeographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'NatGeo / Esri' })
+      ImageryFirefly: L.tileLayer('https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'),
+      ShadedRelief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'),
+      DarkGray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
+      Gray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
+      NationalGeographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}')
     };
 
     let currentLayer = esriLayers.Topographic.addTo(map);
 
-    // Toggle Panel Function
+    // Панелни бошқариш функцияси
     function togglePanel() {
       const panel = document.getElementById('layerPanel');
       const btn = document.getElementById('panelToggle');
       panel.classList.toggle('open');
-
+      
       if(panel.classList.contains('open')) {
-        btn.style.right = '265px';
+        btn.style.right = '285px'; // Панел очилганда тугма чапга сурилади
         btn.style.background = 'var(--accent)';
-        btn.style.color = '#000';
+        btn.style.color = '#0b0f14';
       } else {
         btn.style.right = '16px';
         btn.style.background = 'var(--panel)';
@@ -195,43 +189,33 @@
       }
     }
 
-    // Switch Layer Logic
+    // Қатламни ўзгартириш
     function switchLayer(btn) {
       const layerKey = btn.dataset.layer;
-      if (!esriLayers[layerKey]) return;
-
       map.removeLayer(currentLayer);
       currentLayer = esriLayers[layerKey].addTo(map);
 
       document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('activeLayerStatus').textContent = layerKey;
-
-      // Panelni avtomatik yopish (xohishingiz bo’lsa)
-      // setTimeout(togglePanel, 500);
+      document.getElementById('activeLayerStatus').textContent = btn.innerText.trim();
+      
+      // Танлангандан кейин панел автоматик ёпилиши учун (хоҳишга кўра):
+      // togglePanel(); 
     }
 
-    // Mouse Coordinates
+    // Координаталар
     const coordEl = document.getElementById('coordDisplay');
     map.on('mousemove', e => {
       coordEl.textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-      coordEl.classList.add('active');
     });
 
-    map.on('mouseout', () => {
-      coordEl.classList.remove('active');
-    });
+    // Масштаб
+    map.on('zoomend', () => document.getElementById('zoomLevel').textContent = map.getZoom());
 
-    // Zoom Update
-    map.on('zoomend', () => {
-      document.getElementById('zoomLevel').textContent = map.getZoom();
-    });
-
-    // Close panel on map click
+    // Харитага босилганда панел очиқ бўлса ёпилиб кетади
     map.on('mousedown', () => {
-      if(document.getElementById('layerPanel').classList.contains('open')) {
-        togglePanel();
-      }
+        const panel = document.getElementById('layerPanel');
+        if(panel.classList.contains('open')) togglePanel();
     });
   </script>
 </body>
