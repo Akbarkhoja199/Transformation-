@@ -78,7 +78,7 @@
       overflow: hidden;
     }
     .layer-panel.open { right: 16px; }
-    
+
     .panel-title {
       padding: 14px; font-size: 10px; font-weight: 600; letter-spacing: 2px;
       text-transform: uppercase; color: var(--muted);
@@ -98,8 +98,10 @@
     }
     .layer-btn:hover { background: rgba(0,212,255,0.08); color: var(--accent); }
     .layer-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
-    
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: 0.3s; }
+
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: 0.3s;
+    }
     .layer-btn.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
     /* ── STATUS BAR ── */
@@ -151,7 +153,11 @@
 
   <script>
     // Map Setup
-    const map = L.map('map', { center: [41.2995, 69.2401], zoom: 10, zoomControl: true });
+    const map = L.map('map', {
+      center: [41.2995, 69.2401], // Toshkent
+      zoom: 10,
+      zoomControl: true
+    });
     map.zoomControl.setPosition('bottomleft');
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
 
@@ -160,11 +166,14 @@
       Topographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
       Streets: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'),
       Imagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
-      ImageryFirefly: L.tileLayer('https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'),
-      ShadedRelief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'),
-      DarkGray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
-      Gray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
-      NationalGeographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}')
+      ImageryFirefly: L.tileLevel(
+        'https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Esri Firefly' }
+      ),
+      ShadedRelief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
+      DarkGray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
+      Gray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
+      NationalGeographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'NatGeo / Esri' })
     };
 
     let currentLayer = esriLayers.Topographic.addTo(map);
@@ -174,7 +183,7 @@
       const panel = document.getElementById('layerPanel');
       const btn = document.getElementById('panelToggle');
       panel.classList.toggle('open');
-      
+
       if(panel.classList.contains('open')) {
         btn.style.right = '265px';
         btn.style.background = 'var(--accent)';
@@ -186,18 +195,20 @@
       }
     }
 
-    // Switch Logic
+    // Switch Layer Logic
     function switchLayer(btn) {
       const layerKey = btn.dataset.layer;
+      if (!esriLayers[layerKey]) return;
+
       map.removeLayer(currentLayer);
       currentLayer = esriLayers[layerKey].addTo(map);
 
       document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('activeLayerStatus').textContent = layerKey;
-      
-      // Автоматик ёпиш (ихтиёрий)
-      // setTimeout(togglePanel, 500); 
+
+      // Panelni avtomatik yopish (xohishingiz bo’lsa)
+      // setTimeout(togglePanel, 500);
     }
 
     // Mouse Coordinates
@@ -207,14 +218,21 @@
       coordEl.classList.add('active');
     });
 
+    map.on('mouseout', () => {
+      coordEl.classList.remove('active');
+    });
+
     // Zoom Update
-    map.on('zoomend', () => document.getElementById('zoomLevel').textContent = map.getZoom());
+    map.on('zoomend', () => {
+      document.getElementById('zoomLevel').textContent = map.getZoom();
+    });
 
     // Close panel on map click
     map.on('mousedown', () => {
-        if(document.getElementById('layerPanel').classList.contains('open')) togglePanel();
+      if(document.getElementById('layerPanel').classList.contains('open')) {
+        togglePanel();
+      }
     });
   </script>
 </body>
 </html>
-
