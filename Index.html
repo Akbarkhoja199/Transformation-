@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoMap — Cyber Interactive</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0f14;
+      --panel:     #111820;
+      --border:    #1e2d3d;
+      --accent:    #00d4ff;
+      --accent2:   #ff6b35;
+      --text:      #e2eaf2;
+      --muted:     #5a7a96;
+      --radius:    12px;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; overflow: hidden; }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: 56px;
+      background: rgba(11,15,20,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 16px;
+    }
+    .logo {
+      font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .coord-display {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 20px;
+    }
+    .coord-display.active { color: var(--accent); }
+
+    /* ── MAP ── */
+    #map { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; z-index: 1; background: var(--bg); }
+
+    /* ── TOGGLE BUTTON ── */
+    .panel-toggle {
+      position: fixed; top: 72px; right: 16px; z-index: 1001;
+      width: 46px; height: 46px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--accent); box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .panel-toggle:hover { border-color: var(--accent); transform: scale(1.05); }
+    .panel-toggle svg { width: 22px; height: 22px; fill: currentColor; }
+
+    /* ── LAYER PANEL ── */
+    .layer-panel {
+      position: fixed; top: 72px; right: -280px; z-index: 900;
+      background: rgba(17,24,32,0.96);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 240px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .layer-panel.open { right: 16px; }
+    
+    .panel-title {
+      padding: 14px; font-size: 10px; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between;
+    }
+
+    .layers-grid { max-height: 60vh; overflow-y: auto; padding: 8px; }
+
+    .layer-btn {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 12px;
+      background: transparent; border: none; color: var(--text);
+      font-family: 'Syne', sans-serif; font-size: 13px;
+      cursor: pointer; transition: all 0.2s;
+      border-radius: 8px; margin-bottom: 4px;
+    }
+    .layer-btn:hover { background: rgba(0,212,255,0.08); color: var(--accent); }
+    .layer-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+    
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: 0.3s; }
+    .layer-btn.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
+      height: 30px; background: rgba(11,15,20,0.85);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 16px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);
+    }
+
+    /* ── UTILS ── */
+    .leaflet-control-zoom { border: none !important; margin-left: 16px !important; margin-bottom: 40px !important; }
+    .leaflet-control-zoom a { background: var(--panel) !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; margin-bottom: 4px !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Geo<span>Map</span></div>
+    <div class="coord-display" id="coordDisplay">41.2995, 69.2401</div>
+  </header>
+
+  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
+    <svg viewBox="0 0 24 24"><path d="M12 16L1 9L12 2L23 9L12 16ZM12 18.5L21.3 12.8L23 13.9L12 21L1 13.9L2.7 12.8L12 18.5Z"/></svg>
+  </button>
+
+  <div id="map"></div>
+
+  <div class="layer-panel" id="layerPanel">
+    <div class="panel-title">Basemap <span>Layers</span></div>
+    <div class="layers-grid">
+      <button class="layer-btn active" data-layer="Topographic" onclick="switchLayer(this)"><span class="dot"></span> Топографик</button>
+      <button class="layer-btn" data-layer="Streets" onclick="switchLayer(this)"><span class="dot"></span> Кўчалар</button>
+      <button class="layer-btn" data-layer="Imagery" onclick="switchLayer(this)"><span class="dot"></span> Аэрофото</button>
+      <button class="layer-btn" data-layer="ImageryFirefly" onclick="switchLayer(this)"><span class="dot"></span> Firefly</button>
+      <button class="layer-btn" data-layer="ShadedRelief" onclick="switchLayer(this)"><span class="dot"></span> Рельеф</button>
+      <button class="layer-btn" data-layer="DarkGray" onclick="switchLayer(this)"><span class="dot"></span> Тунги (Dark)</button>
+      <button class="layer-btn" data-layer="Gray" onclick="switchLayer(this)"><span class="dot"></span> Кулранг (Gray)</button>
+      <button class="layer-btn" data-layer="NationalGeographic" onclick="switchLayer(this)"><span class="dot"></span> Nat. Geo</button>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span style="color: #22c55e; margin-right: 15px;">● Online</span>
+    <span id="activeLayerStatus">Topographic</span>
+    <span style="margin-left: auto;">Zoom: <span id="zoomLevel" style="color: var(--accent);">10</span></span>
+  </div>
+
+  <script>
+    // Map Setup
+    const map = L.map('map', { center: [41.2995, 69.2401], zoom: 10, zoomControl: true });
+    map.zoomControl.setPosition('bottomleft');
+    L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Layers
+    const esriLayers = {
+      Topographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' }),
+      Streets: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'),
+      Imagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+      ImageryFirefly: L.tileLayer('https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer/tile/{z}/{y}/{x}'),
+      ShadedRelief: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'),
+      DarkGray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
+      Gray: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'),
+      NationalGeographic: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}')
+    };
+
+    let currentLayer = esriLayers.Topographic.addTo(map);
+
+    // Toggle Panel Function
+    function togglePanel() {
+      const panel = document.getElementById('layerPanel');
+      const btn = document.getElementById('panelToggle');
+      panel.classList.toggle('open');
+      
+      if(panel.classList.contains('open')) {
+        btn.style.right = '265px';
+        btn.style.background = 'var(--accent)';
+        btn.style.color = '#000';
+      } else {
+        btn.style.right = '16px';
+        btn.style.background = 'var(--panel)';
+        btn.style.color = 'var(--accent)';
+      }
+    }
+
+    // Switch Logic
+    function switchLayer(btn) {
+      const layerKey = btn.dataset.layer;
+      map.removeLayer(currentLayer);
+      currentLayer = esriLayers[layerKey].addTo(map);
+
+      document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('activeLayerStatus').textContent = layerKey;
+      
+      // Автоматик ёпиш (ихтиёрий)
+      // setTimeout(togglePanel, 500); 
+    }
+
+    // Mouse Coordinates
+    const coordEl = document.getElementById('coordDisplay');
+    map.on('mousemove', e => {
+      coordEl.textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+      coordEl.classList.add('active');
+    });
+
+    // Zoom Update
+    map.on('zoomend', () => document.getElementById('zoomLevel').textContent = map.getZoom());
+
+    // Close panel on map click
+    map.on('mousedown', () => {
+        if(document.getElementById('layerPanel').classList.contains('open')) togglePanel();
+    });
+  </script>
+</body>
+</html>
+
